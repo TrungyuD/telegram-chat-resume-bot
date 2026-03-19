@@ -1,0 +1,47 @@
+run:
+  timeout: 3m
+  issues-exit-code: 1
+
+linters:
+  enable:
+    - errcheck
+    - govet
+    - staticcheck
+    - unused
+    - ineffassign
+    - gosimple
+    - gocritic
+    - revive
+    - misspell
+    - copyloopvar
+    - bodyclose
+    - noctx
+    - prealloc
+    - unconvert
+    - unparam
+
+linters-settings:
+  revive:
+    rules:
+      - name: exported
+        disabled: true
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - style
+    disabled-checks:
+      - commentedOutCode
+      - whyNoLint
+  misspell:
+    locale: US
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - errcheck
+        - unparam
+    - path: internal/store/
+      text: "should not use dot imports"
+  max-issues-per-linter: 50
+  max-same-issues: 5

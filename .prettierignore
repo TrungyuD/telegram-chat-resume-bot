@@ -1,0 +1,17 @@
+# Go files handled by gofmt
+*.go
+
+# Binary & build
+dist/
+tmp/
+
+# Data
+data/
+
+# Git
+.git/
+
+# Generated
+repomix-output.*
+cover.out
+cover.html

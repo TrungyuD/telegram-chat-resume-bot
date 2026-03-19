@@ -1,0 +1,44 @@
+# Go
+dist/
+tmp/
+data/
+.env
+.env.docker
+
+# Binary
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+telegram-chat-resume-bot
+
+# Test & Coverage
+*.test
+*.out
+cover.html
+cover.out
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Tools
+.omc/
+repomix-output.*
+node_modules/
+
+# Claude Code
+.claude/settings.local.json
+.claude
+
+# Project artifacts
+/docs
+/plans

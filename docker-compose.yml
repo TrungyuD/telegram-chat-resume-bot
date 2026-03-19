@@ -1,0 +1,28 @@
+services:
+  bot:
+    build: .
+    env_file: .env.docker
+    volumes:
+      - bot-data:/app/data
+    ports:
+      - "${WEB_PORT:-3000}:${WEB_PORT:-3000}"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: '2.0'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:${WEB_PORT:-3000}/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  bot-data:

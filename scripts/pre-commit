@@ -1,0 +1,39 @@
+#!/bin/sh
+# Pre-commit hook: format, vet, lint, and test before committing.
+# Install: make hooks
+
+set -e
+
+echo "==> Running gofmt..."
+UNFORMATTED=$(gofmt -l . 2>&1 | grep -v vendor || true)
+if [ -n "$UNFORMATTED" ]; then
+  echo "ERROR: These files are not formatted:"
+  echo "$UNFORMATTED"
+  echo "Run 'gofmt -w .' to fix."
+  exit 1
+fi
+
+echo "==> Running prettier..."
+if command -v pnpm >/dev/null 2>&1; then
+  pnpm prettier --check . 2>/dev/null || {
+    echo "ERROR: Files not formatted. Run 'make fmt-prettier' to fix."
+    exit 1
+  }
+else
+  echo "WARN: pnpm not found, skipping prettier."
+fi
+
+echo "==> Running go vet..."
+go vet ./...
+
+echo "==> Running golangci-lint..."
+if command -v golangci-lint >/dev/null 2>&1; then
+  golangci-lint run ./...
+else
+  echo "WARN: golangci-lint not installed, skipping. Install: https://golangci-lint.run/welcome/install/"
+fi
+
+echo "==> Running tests..."
+go test -race -count=1 ./...
+
+echo "==> All checks passed."
