@@ -20,18 +20,35 @@ type CostRecord struct {
 	CreatedAt    string  `json:"created_at"`
 }
 
-func costPath(telegramID string) string {
+// costMonthPath returns the path for a user's cost file for a given month.
+func costMonthPath(telegramID, month string) string {
+	return filepath.Join(storage.DataDir, "costs", telegramID+"_"+month+".json")
+}
+
+// currentMonth returns the current month in YYYY-MM format.
+func currentMonth() string {
+	return time.Now().UTC().Format("2006-01")
+}
+
+// legacyCostPath returns the old single-file path for migration.
+func legacyCostPath(telegramID string) string {
 	return filepath.Join(storage.DataDir, "costs", telegramID+".json")
 }
 
 func AddCostRecord(telegramID string, record *CostRecord) error {
-	path := costPath(telegramID)
-	unlock := storage.LockFile(path)
-	defer unlock()
-
 	if record.CreatedAt == "" {
 		record.CreatedAt = storage.NowUTC()
 	}
+
+	// Determine month from record timestamp
+	month := currentMonth()
+	if len(record.CreatedAt) >= 7 {
+		month = record.CreatedAt[:7]
+	}
+
+	path := costMonthPath(telegramID, month)
+	unlock := storage.LockFile(path)
+	defer unlock()
 
 	var records []CostRecord
 	if data, err := os.ReadFile(path); err == nil {
@@ -41,11 +58,38 @@ func AddCostRecord(telegramID string, record *CostRecord) error {
 	return storage.WriteJSON(path, records)
 }
 
-func GetUserTotalCost(telegramID string) float64 {
-	records, err := storage.ReadJSON[[]CostRecord](costPath(telegramID))
-	if err != nil {
-		return 0
+// readUserCostFiles reads all cost files (legacy + monthly) for a user.
+func readUserCostFiles(telegramID string) []CostRecord {
+	var all []CostRecord
+
+	// Read legacy file if it exists
+	if records, err := storage.ReadJSON[[]CostRecord](legacyCostPath(telegramID)); err == nil {
+		all = append(all, records...)
 	}
+
+	// Read monthly files
+	dir := filepath.Join(storage.DataDir, "costs")
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return all
+	}
+	prefix := telegramID + "_"
+	for _, e := range entries {
+		name := e.Name()
+		if !strings.HasPrefix(name, prefix) || !strings.HasSuffix(name, ".json") {
+			continue
+		}
+		records, err := storage.ReadJSON[[]CostRecord](filepath.Join(dir, name))
+		if err != nil {
+			continue
+		}
+		all = append(all, records...)
+	}
+	return all
+}
+
+func GetUserTotalCost(telegramID string) float64 {
+	records := readUserCostFiles(telegramID)
 	var total float64
 	for _, r := range records {
 		total += r.CostUSD
@@ -54,37 +98,66 @@ func GetUserTotalCost(telegramID string) float64 {
 }
 
 func GetUserCostToday(telegramID string) float64 {
-	records, err := storage.ReadJSON[[]CostRecord](costPath(telegramID))
-	if err != nil {
-		return 0
-	}
+	// Only need to read current month's file + legacy
 	today := time.Now().UTC().Format("2006-01-02")
+	month := today[:7]
+
 	var total float64
-	for _, r := range records {
-		if strings.HasPrefix(r.CreatedAt, today) {
-			total += r.CostUSD
+
+	// Check legacy file
+	if records, err := storage.ReadJSON[[]CostRecord](legacyCostPath(telegramID)); err == nil {
+		for _, r := range records {
+			if strings.HasPrefix(r.CreatedAt, today) {
+				total += r.CostUSD
+			}
 		}
 	}
+
+	// Check current month file
+	if records, err := storage.ReadJSON[[]CostRecord](costMonthPath(telegramID, month)); err == nil {
+		for _, r := range records {
+			if strings.HasPrefix(r.CreatedAt, today) {
+				total += r.CostUSD
+			}
+		}
+	}
+
 	return total
 }
 
 func GetAllCostStats() map[string]float64 {
 	dir := filepath.Join(storage.DataDir, "costs")
-	names, err := storage.ListJSONFiles(dir)
+	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return nil
 	}
+
 	stats := make(map[string]float64)
-	for _, name := range names {
-		records, err := storage.ReadJSON[[]CostRecord](filepath.Join(dir, name+".json"))
+	for _, e := range entries {
+		name := e.Name()
+		if e.IsDir() || !strings.HasSuffix(name, ".json") {
+			continue
+		}
+
+		records, err := storage.ReadJSON[[]CostRecord](filepath.Join(dir, name))
 		if err != nil {
 			continue
 		}
-		var total float64
-		for _, r := range records {
-			total += r.CostUSD
+
+		// Extract telegram ID: either "tid.json" (legacy) or "tid_YYYY-MM.json" (monthly)
+		base := strings.TrimSuffix(name, ".json")
+		tid := base
+		if idx := strings.LastIndex(base, "_"); idx > 0 {
+			// Check if suffix looks like a month (YYYY-MM)
+			suffix := base[idx+1:]
+			if len(suffix) == 7 && suffix[4] == '-' {
+				tid = base[:idx]
+			}
 		}
-		stats[name] = total
+
+		for _, r := range records {
+			stats[tid] += r.CostUSD
+		}
 	}
 	return stats
 }

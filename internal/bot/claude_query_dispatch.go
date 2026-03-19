@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -201,24 +202,16 @@ func resumeClaudeSessionID(session *store.SessionMeta) string {
 	if session.ClaudeSessionID != "" {
 		return session.ClaudeSessionID
 	}
-	if session.SessionID != "" && containsDash(session.SessionID) {
+	if session.SessionID != "" && strings.Contains(session.SessionID, "-") {
 		return session.SessionID
 	}
 	return ""
 }
 
-func containsDash(value string) bool {
-	for _, ch := range value {
-		if ch == '-' {
-			return true
-		}
-	}
-	return false
-}
-
 func truncate(s string, maxLen int) string {
-	if len(s) <= maxLen {
+	runes := []rune(s)
+	if len(runes) <= maxLen {
 		return s
 	}
-	return s[:maxLen] + "..."
+	return string(runes[:maxLen]) + "..."
 }

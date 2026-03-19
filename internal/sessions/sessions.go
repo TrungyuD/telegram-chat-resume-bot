@@ -2,15 +2,25 @@ package sessions
 
 import (
 	"errors"
+	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/TrungyuD/telegram-chat-resume-bot/internal/platform/storage"
 )
 
 var ErrSessionNotFound = errors.New("session not found")
 
+func sessionDir(telegramID string) string {
+	return filepath.Join(storage.DataDir, "sessions", telegramID)
+}
+
 func sessionPath(telegramID, sessionID string) string {
-	return filepath.Join(storage.DataDir, "sessions", telegramID, sessionID+".md")
+	return filepath.Join(sessionDir(telegramID), sessionID+".md")
+}
+
+func activeSessionCachePath(telegramID string) string {
+	return filepath.Join(sessionDir(telegramID), "active_session.txt")
 }
 
 // GetSessionPath returns the filesystem path for a session file.
@@ -30,8 +40,34 @@ func GetSession(telegramID, sessionID string) (*storage.SessionMeta, error) {
 	return meta, nil
 }
 
+// writeActiveCache writes the active session ID to a cache file.
+func writeActiveCache(telegramID, sessionID string) {
+	path := activeSessionCachePath(telegramID)
+	_ = storage.EnsureDir(filepath.Dir(path))
+	_ = os.WriteFile(path, []byte(sessionID), 0o644)
+}
+
+// clearActiveCache removes the active session cache file.
+func clearActiveCache(telegramID string) {
+	_ = os.Remove(activeSessionCachePath(telegramID))
+}
+
 func GetActiveSession(telegramID string) (*storage.SessionMeta, error) {
-	dir := filepath.Join(storage.DataDir, "sessions", telegramID)
+	// Try cached active session first
+	if data, err := os.ReadFile(activeSessionCachePath(telegramID)); err == nil {
+		cachedID := strings.TrimSpace(string(data))
+		if cachedID != "" {
+			meta, err := GetSession(telegramID, cachedID)
+			if err == nil && meta != nil && meta.IsActive {
+				return meta, nil
+			}
+			// Cache is stale, clear it
+			clearActiveCache(telegramID)
+		}
+	}
+
+	// Fallback: scan all session files
+	dir := sessionDir(telegramID)
 	names, err := storage.ListMDFiles(dir)
 	if err != nil {
 		return nil, err
@@ -43,6 +79,8 @@ func GetActiveSession(telegramID string) (*storage.SessionMeta, error) {
 			continue
 		}
 		if meta.IsActive {
+			// Update cache for next time
+			writeActiveCache(telegramID, meta.SessionID)
 			return meta, nil
 		}
 	}
@@ -51,14 +89,24 @@ func GetActiveSession(telegramID string) (*storage.SessionMeta, error) {
 
 func SaveSession(meta *storage.SessionMeta) error {
 	path := sessionPath(meta.TelegramID, meta.SessionID)
+	var err error
 	if storage.FileExists(path) {
-		return storage.UpdateSessionFrontmatter(path, meta)
+		err = storage.UpdateSessionFrontmatter(path, meta)
+	} else {
+		err = storage.WriteSessionMD(path, meta, nil)
 	}
-	return storage.WriteSessionMD(path, meta, nil)
+	if err != nil {
+		return err
+	}
+	// Update active session cache
+	if meta.IsActive {
+		writeActiveCache(meta.TelegramID, meta.SessionID)
+	}
+	return nil
 }
 
 func GetSessionForDir(telegramID, workingDir string) (*storage.SessionMeta, error) {
-	dir := filepath.Join(storage.DataDir, "sessions", telegramID)
+	dir := sessionDir(telegramID)
 	names, err := storage.ListMDFiles(dir)
 	if err != nil {
 		return nil, err
@@ -81,7 +129,7 @@ func GetSessionForDir(telegramID, workingDir string) (*storage.SessionMeta, erro
 }
 
 func ListSessions(telegramID string) ([]*storage.SessionMeta, error) {
-	dir := filepath.Join(storage.DataDir, "sessions", telegramID)
+	dir := sessionDir(telegramID)
 	names, err := storage.ListMDFiles(dir)
 	if err != nil {
 		return nil, err
@@ -99,7 +147,7 @@ func ListSessions(telegramID string) ([]*storage.SessionMeta, error) {
 }
 
 func SwitchSession(telegramID, sessionID string) error {
-	dir := filepath.Join(storage.DataDir, "sessions", telegramID)
+	dir := sessionDir(telegramID)
 	// Lock the entire user session directory to prevent TOCTOU races
 	unlock := storage.LockFile(dir)
 	defer unlock()
@@ -141,11 +189,14 @@ func SwitchSession(telegramID, sessionID string) error {
 			return err
 		}
 	}
+
+	// Update active session cache
+	writeActiveCache(telegramID, sessionID)
 	return nil
 }
 
 func DeactivateSession(telegramID string) error {
-	dir := filepath.Join(storage.DataDir, "sessions", telegramID)
+	dir := sessionDir(telegramID)
 	// Lock the entire user session directory to prevent TOCTOU races
 	unlock := storage.LockFile(dir)
 	defer unlock()
@@ -167,6 +218,9 @@ func DeactivateSession(telegramID string) error {
 			}
 		}
 	}
+
+	// Clear active session cache
+	clearActiveCache(telegramID)
 	return nil
 }
 
@@ -174,6 +228,14 @@ func DeleteSession(telegramID, sessionID string) error {
 	path := sessionPath(telegramID, sessionID)
 	unlock := storage.LockFile(path)
 	defer unlock()
+
+	// Clear cache if deleting the active session
+	if data, err := os.ReadFile(activeSessionCachePath(telegramID)); err == nil {
+		if strings.TrimSpace(string(data)) == sessionID {
+			clearActiveCache(telegramID)
+		}
+	}
+
 	return storage.DeleteFile(path)
 }
 
