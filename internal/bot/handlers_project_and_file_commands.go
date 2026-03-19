@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/user/telegram-claude-bot/internal/store"
+	"github.com/TrungyuD/telegram-chat-resume-bot/internal/store"
 	tele "gopkg.in/telebot.v4"
 )
 

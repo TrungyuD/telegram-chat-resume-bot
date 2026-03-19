@@ -10,10 +10,10 @@ import (
 	"syscall"
 
 	"github.com/joho/godotenv"
-	"github.com/user/telegram-claude-bot/internal/bot"
-	"github.com/user/telegram-claude-bot/internal/config"
-	"github.com/user/telegram-claude-bot/internal/dashboard"
-	"github.com/user/telegram-claude-bot/internal/platform/storage"
+	"github.com/TrungyuD/telegram-chat-resume-bot/internal/bot"
+	"github.com/TrungyuD/telegram-chat-resume-bot/internal/config"
+	"github.com/TrungyuD/telegram-chat-resume-bot/internal/dashboard"
+	"github.com/TrungyuD/telegram-chat-resume-bot/internal/platform/storage"
 )
 
 func main() {

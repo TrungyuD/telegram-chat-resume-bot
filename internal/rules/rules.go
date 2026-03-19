@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/user/telegram-claude-bot/internal/platform/storage"
+	"github.com/TrungyuD/telegram-chat-resume-bot/internal/platform/storage"
 )
 
 // Rule represents a global or user rule.

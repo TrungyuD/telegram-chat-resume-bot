@@ -1,7 +1,7 @@
 package store
 
 import (
-	"github.com/user/telegram-claude-bot/internal/memory"
+	"github.com/TrungyuD/telegram-chat-resume-bot/internal/memory"
 )
 
 type Memory = memory.Memory

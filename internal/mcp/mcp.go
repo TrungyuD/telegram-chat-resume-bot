@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/user/telegram-claude-bot/internal/platform/storage"
+	"github.com/TrungyuD/telegram-chat-resume-bot/internal/platform/storage"
 )
 
 // McpServer represents an MCP server configuration.

@@ -13,9 +13,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/user/telegram-claude-bot/internal/config"
-	"github.com/user/telegram-claude-bot/internal/events"
-	"github.com/user/telegram-claude-bot/internal/platform/storage"
+	"github.com/TrungyuD/telegram-chat-resume-bot/internal/config"
+	"github.com/TrungyuD/telegram-chat-resume-bot/internal/events"
+	"github.com/TrungyuD/telegram-chat-resume-bot/internal/platform/storage"
 )
 
 // Client wraps the Claude CLI subprocess.

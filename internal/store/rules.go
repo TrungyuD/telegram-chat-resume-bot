@@ -1,7 +1,7 @@
 package store
 
 import (
-	"github.com/user/telegram-claude-bot/internal/rules"
+	"github.com/TrungyuD/telegram-chat-resume-bot/internal/rules"
 )
 
 type Rule = rules.Rule

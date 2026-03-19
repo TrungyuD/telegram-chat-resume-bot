@@ -1,7 +1,7 @@
 package store
 
 import (
-	"github.com/user/telegram-claude-bot/internal/sessions"
+	"github.com/TrungyuD/telegram-chat-resume-bot/internal/sessions"
 )
 
 var ErrSessionNotFound = sessions.ErrSessionNotFound

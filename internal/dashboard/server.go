@@ -13,8 +13,8 @@ import (
 	"github.com/coder/websocket/wsjson"
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
-	"github.com/user/telegram-claude-bot/internal/events"
-	"github.com/user/telegram-claude-bot/internal/store"
+	"github.com/TrungyuD/telegram-chat-resume-bot/internal/events"
+	"github.com/TrungyuD/telegram-chat-resume-bot/internal/store"
 )
 
 const wsClientQueueSize = 64

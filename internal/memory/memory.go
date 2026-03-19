@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/user/telegram-claude-bot/internal/platform/storage"
+	"github.com/TrungyuD/telegram-chat-resume-bot/internal/platform/storage"
 )
 
 // Memory represents a user memory entry.

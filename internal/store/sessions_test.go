@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/user/telegram-claude-bot/internal/platform/storage"
+	"github.com/TrungyuD/telegram-chat-resume-bot/internal/platform/storage"
 )
 
 func TestSwitchSessionKeepsActiveSessionWhenTargetMissing(t *testing.T) {

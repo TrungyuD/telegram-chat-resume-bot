@@ -1,7 +1,7 @@
 package store
 
 import (
-	"github.com/user/telegram-claude-bot/internal/mcp"
+	"github.com/TrungyuD/telegram-chat-resume-bot/internal/mcp"
 )
 
 type McpServer = mcp.McpServer

@@ -1,8 +1,8 @@
 package store
 
 import (
-	"github.com/user/telegram-claude-bot/internal/config"
-	"github.com/user/telegram-claude-bot/internal/settings"
+	"github.com/TrungyuD/telegram-chat-resume-bot/internal/config"
+	"github.com/TrungyuD/telegram-chat-resume-bot/internal/settings"
 )
 
 // Re-export types for backward compatibility.

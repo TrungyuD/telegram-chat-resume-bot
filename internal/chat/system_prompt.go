@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/user/telegram-claude-bot/internal/memory"
-	"github.com/user/telegram-claude-bot/internal/rules"
+	"github.com/TrungyuD/telegram-chat-resume-bot/internal/memory"
+	"github.com/TrungyuD/telegram-chat-resume-bot/internal/rules"
 )
 
 // BuildSystemPrompt assembles the system prompt from rules and memories.

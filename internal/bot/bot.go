@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/user/telegram-claude-bot/internal/claude"
-	"github.com/user/telegram-claude-bot/internal/store"
+	"github.com/TrungyuD/telegram-chat-resume-bot/internal/claude"
+	"github.com/TrungyuD/telegram-chat-resume-bot/internal/store"
 	tele "gopkg.in/telebot.v4"
 )
 

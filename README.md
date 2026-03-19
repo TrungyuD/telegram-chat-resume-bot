@@ -72,8 +72,8 @@ Bot Telegram cung cấp khả năng trợ lý Claude AI cho người dùng đư�
 
 ```bash
 # Clone the repository
-git clone https://github.com/user/telegram-claude-bot.git
-cd telegram-claude-bot
+git clone https://github.com/TrungyuD/telegram-chat-resume-bot.git
+cd telegram-chat-resume-bot
 
 # Copy and edit configuration
 cp .env.example .env
@@ -378,15 +378,26 @@ Single-process, multi-goroutine design with 3 main subsystems:
 
 ### Package Overview
 
-| Package               | Role                                                  |
-| --------------------- | ----------------------------------------------------- |
-| `cmd/bot/`            | Entry point, lifecycle management                     |
-| `internal/bot/`       | Telegram bot setup, handlers, callbacks, middleware   |
-| `internal/claude/`    | Claude CLI wrapper, rate limiting, session compaction |
-| `internal/store/`     | JSON/Markdown CRUD for all data entities              |
-| `internal/dashboard/` | HTTP server, REST API, WebSocket hub                  |
-| `internal/events/`    | EventBus publish/subscribe system                     |
-| `internal/format/`    | Markdown-to-HTML converter, message splitting         |
+| Package                | Role                                                  |
+| ---------------------- | ----------------------------------------------------- |
+| `cmd/bot/`             | Entry point, lifecycle management                     |
+| `internal/bot/`        | Telegram bot setup, handlers, callbacks, middleware   |
+| `internal/chat/`       | Chat orchestration, system prompt, session compaction |
+| `internal/claude/`     | Claude CLI wrapper, rate limiting, types              |
+| `internal/config/`     | Global config loading (env + config.json)             |
+| `internal/users/`      | User profile CRUD                                     |
+| `internal/settings/`   | Per-user AI settings                                  |
+| `internal/sessions/`   | Session lifecycle management                          |
+| `internal/rules/`      | Global/user rule management                           |
+| `internal/memory/`     | Per-user key-value memory                             |
+| `internal/mcp/`        | MCP server configuration                              |
+| `internal/costs/`      | Cost tracking                                         |
+| `internal/logs/`       | Activity logging                                      |
+| `internal/platform/storage/` | File I/O primitives, JSON, Markdown, locking    |
+| `internal/events/`     | EventBus publish/subscribe                            |
+| `internal/format/`     | Markdown-to-HTML converter, message splitting         |
+| `internal/dashboard/`  | HTTP server, REST API, WebSocket hub                  |
+| `internal/store/`      | Backward-compat shim (delegates to domain packages)   |
 
 ---
 
@@ -462,6 +473,38 @@ sudo journalctl -u telegram-claude-bot -f  # View logs
 - The bot uses long-polling (no webhook setup needed)
 - Set `ALLOWED_WORKING_DIRS` in production to restrict file system access
 
+### Docker Deployment
+
+```bash
+# Clone
+git clone https://github.com/TrungyuD/telegram-chat-resume-bot.git
+cd telegram-chat-resume-bot
+
+# Configure
+cp .env.docker.example .env.docker
+nano .env.docker  # Set TELEGRAM_BOT_TOKEN, ADMIN_TELEGRAM_IDS, ANTHROPIC_API_KEY
+
+# Build and run
+make docker-build
+make docker-up
+
+# View logs
+make docker-logs
+
+# Stop
+make docker-down
+```
+
+The Docker image uses `node:22-alpine` as runtime base (Claude CLI requires Node.js) with the Go binary copied from a multi-stage build. Data persists via a Docker named volume (`bot-data`).
+
+| Make Target | Description |
+|-------------|-------------|
+| `docker-build` | Build Docker image |
+| `docker-build-amd64` | Cross-build for linux/amd64 |
+| `docker-up` | Start container (auto-creates `.env.docker` if missing) |
+| `docker-down` | Stop container |
+| `docker-logs` | Follow container logs |
+
 ---
 
 ---
@@ -528,8 +571,8 @@ sudo journalctl -u telegram-claude-bot -f  # View logs
 
 ```bash
 # Clone repository
-git clone https://github.com/user/telegram-claude-bot.git
-cd telegram-claude-bot
+git clone https://github.com/TrungyuD/telegram-chat-resume-bot.git
+cd telegram-chat-resume-bot
 
 # Sao chép và chỉnh sửa cấu hình
 cp .env.example .env
@@ -834,15 +877,26 @@ Thiết kế đơn tiến trình, đa goroutine với 3 hệ thống chính:
 
 ### Tổng Quan Package
 
-| Package               | Vai Trò                                               |
-| --------------------- | ----------------------------------------------------- |
-| `cmd/bot/`            | Điểm vào, quản lý vòng đời                            |
-| `internal/bot/`       | Thiết lập bot Telegram, handler, callback, middleware |
-| `internal/claude/`    | Wrapper CLI Claude, giới hạn tốc độ, nén phiên        |
-| `internal/store/`     | CRUD JSON/Markdown cho tất cả thực thể dữ liệu        |
-| `internal/dashboard/` | HTTP server, REST API, WebSocket hub                  |
-| `internal/events/`    | Hệ thống EventBus pub/sub                             |
-| `internal/format/`    | Chuyển đổi Markdown sang HTML, chia tin nhắn          |
+| Package                | Vai Trò                                                |
+| ---------------------- | ------------------------------------------------------ |
+| `cmd/bot/`             | Điểm vào, quản lý vòng đời                             |
+| `internal/bot/`        | Thiết lập bot Telegram, handler, callback, middleware  |
+| `internal/chat/`       | Điều phối chat, system prompt, nén phiên               |
+| `internal/claude/`     | Wrapper CLI Claude, giới hạn tốc độ, kiểu dữ liệu     |
+| `internal/config/`     | Tải cấu hình toàn cục (env + config.json)              |
+| `internal/users/`      | CRUD hồ sơ người dùng                                  |
+| `internal/settings/`   | Cài đặt AI riêng từng người dùng                       |
+| `internal/sessions/`   | Quản lý vòng đời phiên                                 |
+| `internal/rules/`      | Quản lý quy tắc toàn cục/cá nhân                       |
+| `internal/memory/`     | Bộ nhớ key-value cho từng người dùng                    |
+| `internal/mcp/`        | Cấu hình MCP server                                    |
+| `internal/costs/`      | Theo dõi chi phí                                        |
+| `internal/logs/`       | Ghi nhật ký hoạt động                                   |
+| `internal/platform/storage/` | Các hàm I/O file, JSON, Markdown, locking         |
+| `internal/events/`     | Hệ thống EventBus pub/sub                              |
+| `internal/format/`     | Chuyển đổi Markdown sang HTML, chia tin nhắn           |
+| `internal/dashboard/`  | HTTP server, REST API, WebSocket hub                   |
+| `internal/store/`      | Shim tương thích ngược (ủy quyền sang domain packages) |
 
 ---
 
@@ -917,6 +971,38 @@ sudo journalctl -u telegram-claude-bot -f  # Xem nhật ký
 - Claude CLI phải được cài đặt và xác thực trên máy chủ
 - Bot sử dụng long-polling (không cần thiết lập webhook)
 - Đảm bảo đặt `ALLOWED_WORKING_DIRS` trong môi trường production để giới hạn truy cập hệ thống file
+
+### Triển Khai Docker
+
+```bash
+# Clone
+git clone https://github.com/TrungyuD/telegram-chat-resume-bot.git
+cd telegram-chat-resume-bot
+
+# Cấu hình
+cp .env.docker.example .env.docker
+nano .env.docker  # Đặt TELEGRAM_BOT_TOKEN, ADMIN_TELEGRAM_IDS, ANTHROPIC_API_KEY
+
+# Build và chạy
+make docker-build
+make docker-up
+
+# Xem log
+make docker-logs
+
+# Dừng
+make docker-down
+```
+
+Docker image sử dụng `node:22-alpine` làm base runtime (Claude CLI cần Node.js) với Go binary từ multi-stage build. Dữ liệu được lưu qua Docker named volume (`bot-data`).
+
+| Lệnh Make | Mô Tả |
+|------------|--------|
+| `docker-build` | Build Docker image |
+| `docker-build-amd64` | Cross-build cho linux/amd64 |
+| `docker-up` | Khởi động container (tự tạo `.env.docker` nếu chưa có) |
+| `docker-down` | Dừng container |
+| `docker-logs` | Theo dõi log container |
 
 ---
 

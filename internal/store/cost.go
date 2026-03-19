@@ -1,7 +1,7 @@
 package store
 
 import (
-	"github.com/user/telegram-claude-bot/internal/costs"
+	"github.com/TrungyuD/telegram-chat-resume-bot/internal/costs"
 )
 
 type CostRecord = costs.CostRecord

@@ -8,11 +8,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/user/telegram-claude-bot/internal/chat"
-	"github.com/user/telegram-claude-bot/internal/claude"
-	"github.com/user/telegram-claude-bot/internal/events"
-	"github.com/user/telegram-claude-bot/internal/format"
-	"github.com/user/telegram-claude-bot/internal/store"
+	"github.com/TrungyuD/telegram-chat-resume-bot/internal/chat"
+	"github.com/TrungyuD/telegram-chat-resume-bot/internal/claude"
+	"github.com/TrungyuD/telegram-chat-resume-bot/internal/events"
+	"github.com/TrungyuD/telegram-chat-resume-bot/internal/format"
+	"github.com/TrungyuD/telegram-chat-resume-bot/internal/store"
 	tele "gopkg.in/telebot.v4"
 )
 

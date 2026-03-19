@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/user/telegram-claude-bot/internal/claude"
+	"github.com/TrungyuD/telegram-chat-resume-bot/internal/claude"
 	tele "gopkg.in/telebot.v4"
 )
 

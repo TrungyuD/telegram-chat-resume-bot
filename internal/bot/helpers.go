@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/user/telegram-claude-bot/internal/format"
+	"github.com/TrungyuD/telegram-chat-resume-bot/internal/format"
 	tele "gopkg.in/telebot.v4"
 )
 

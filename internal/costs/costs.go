@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/user/telegram-claude-bot/internal/platform/storage"
+	"github.com/TrungyuD/telegram-chat-resume-bot/internal/platform/storage"
 )
 
 // CostRecord represents a single cost entry.

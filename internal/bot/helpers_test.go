@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/user/telegram-claude-bot/internal/store"
+	"github.com/TrungyuD/telegram-chat-resume-bot/internal/store"
 )
 
 func TestResolveUserPathRejectsPrefixBypass(t *testing.T) {

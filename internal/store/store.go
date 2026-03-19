@@ -3,7 +3,7 @@
 package store
 
 import (
-	"github.com/user/telegram-claude-bot/internal/platform/storage"
+	"github.com/TrungyuD/telegram-chat-resume-bot/internal/platform/storage"
 )
 
 // GetDataDir returns the current data directory from the storage package.

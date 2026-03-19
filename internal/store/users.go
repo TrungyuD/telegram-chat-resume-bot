@@ -1,7 +1,7 @@
 package store
 
 import (
-	"github.com/user/telegram-claude-bot/internal/users"
+	"github.com/TrungyuD/telegram-chat-resume-bot/internal/users"
 )
 
 // User re-exported for backward compatibility.

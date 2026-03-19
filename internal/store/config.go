@@ -3,7 +3,7 @@
 package store
 
 import (
-	"github.com/user/telegram-claude-bot/internal/config"
+	"github.com/TrungyuD/telegram-chat-resume-bot/internal/config"
 )
 
 // GlobalConfig re-exported for backward compatibility.

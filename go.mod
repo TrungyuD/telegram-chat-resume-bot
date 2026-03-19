@@ -1,4 +1,4 @@
-module github.com/user/telegram-claude-bot
+module github.com/TrungyuD/telegram-chat-resume-bot
 
 go 1.25.4
 

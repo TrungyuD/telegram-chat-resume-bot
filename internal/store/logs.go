@@ -1,7 +1,7 @@
 package store
 
 import (
-	"github.com/user/telegram-claude-bot/internal/logs"
+	"github.com/TrungyuD/telegram-chat-resume-bot/internal/logs"
 )
 
 type ActivityLog = logs.ActivityLog
