@@ -49,7 +49,7 @@ func ReadJSON[T any](path string) (T, error) {
 }
 
 // WriteJSON writes a struct to a JSON file with pretty formatting.
-// Creates parent directories if needed.
+// Uses atomic write (temp file + rename) for crash safety.
 func WriteJSON(path string, data any) error {
 	if err := EnsureDir(filepath.Dir(path)); err != nil {
 		return err
@@ -58,7 +58,17 @@ func WriteJSON(path string, data any) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, bytes, 0o644)
+	return atomicWriteFile(path, bytes, 0o644)
+}
+
+// atomicWriteFile writes data to a temp file then renames it to the target path.
+// This prevents data corruption if the process crashes mid-write.
+func atomicWriteFile(path string, data []byte, perm os.FileMode) error {
+	tmp := path + ".tmp"
+	if err := os.WriteFile(tmp, data, perm); err != nil {
+		return err
+	}
+	return os.Rename(tmp, path)
 }
 
 // DeleteFile removes a file if it exists.
@@ -245,7 +255,7 @@ func WriteSessionMD(path string, meta *SessionMeta, messages []SessionMessage) e
 		fmt.Fprintf(&buf, "\n## %s | %s\n%s\n", msg.Role, msg.Timestamp, msg.Content)
 	}
 
-	return os.WriteFile(path, []byte(buf.String()), 0o644)
+	return atomicWriteFile(path, []byte(buf.String()), 0o644)
 }
 
 // AppendSessionMessage appends a message to an existing session markdown file.
@@ -290,7 +300,7 @@ func UpdateSessionFrontmatter(path string, meta *SessionMeta) error {
 	buf.WriteString("---")
 	buf.WriteString(parts[2])
 
-	return os.WriteFile(path, []byte(buf.String()), 0o644)
+	return atomicWriteFile(path, []byte(buf.String()), 0o644)
 }
 
 // InitDataDirs creates all required data directories.

@@ -122,8 +122,8 @@ func (b *Bot) registerHandlers() {
 	wl.Handle(tele.OnPhoto, b.handlePhoto)
 	wl.Handle(tele.OnDocument, b.handleDocument)
 
-	// Callback queries (global)
-	b.tele.Handle(tele.OnCallback, b.handleCallback)
+	// Callback queries (whitelisted)
+	wl.Handle(tele.OnCallback, b.handleCallback)
 }
 
 // telegramID returns the string telegram ID from context.

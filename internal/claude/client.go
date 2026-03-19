@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/TrungyuD/telegram-chat-resume-bot/internal/config"
@@ -129,7 +130,7 @@ func (c *Client) SendToClaude(ctx context.Context, message string, opts ClaudeOp
 							inputStr = string(b)
 						}
 						toolAct := ToolActivity{Name: block.Name, Input: inputStr, Status: "running", Time: storage.NowUTC()}
-						activity.Tools = append(activity.Tools, toolAct)
+						activity.AddTool(toolAct)
 						if opts.OnToolUse != nil {
 							opts.OnToolUse(block.Name, inputStr)
 						}
@@ -164,7 +165,7 @@ func (c *Client) SendToClaude(ctx context.Context, message string, opts ClaudeOp
 						inputStr = string(b)
 					}
 					toolAct := ToolActivity{Name: ev.Name, Input: inputStr, Status: "running", Time: storage.NowUTC()}
-					activity.Tools = append(activity.Tools, toolAct)
+					activity.AddTool(toolAct)
 					if opts.OnToolUse != nil {
 						opts.OnToolUse(ev.Name, inputStr)
 					}
@@ -184,12 +185,7 @@ func (c *Client) SendToClaude(ctx context.Context, message string, opts ClaudeOp
 			}
 
 		case "tool_result":
-			for i := len(activity.Tools) - 1; i >= 0; i-- {
-				if activity.Tools[i].Status == "running" {
-					activity.Tools[i].Status = "done"
-					break
-				}
-			}
+			activity.MarkLastToolDone()
 			events.Bus.Emit(events.EventSDKToolResult, map[string]any{"telegram_id": opts.TelegramID})
 
 		case "result":
@@ -266,12 +262,13 @@ func buildArgs(message string, opts ClaudeOptions) []string {
 
 	switch opts.Mode {
 	case "ask":
-		args = append(args, "--tools", "")
+		args = append(args, "--allowedTools", "")
 	case "plan":
-		args = append(args, "--allowedTools", "Read,Glob,Grep,Bash")
+		args = append(args, "--allowedTools", "Read,Glob,Grep,Bash(read-only)")
+	default:
+		// Full mode: allow common dev tools but not unrestricted shell access
+		args = append(args, "--allowedTools", "Read,Write,Edit,MultiEdit,Glob,Grep,Bash")
 	}
-
-	args = append(args, "--permission-mode", "bypassPermissions")
 	return args
 }
 
@@ -284,7 +281,8 @@ func supportedEffort(value string) string {
 	}
 }
 
-// InterruptQuery kills the active query for the given telegramID.
+// InterruptQuery gracefully stops the active query for the given telegramID.
+// Sends SIGTERM first, waits up to 3 seconds, then SIGKILL if still alive.
 func (c *Client) InterruptQuery(telegramID string) bool {
 	v, ok := c.activeQueries.Load(telegramID)
 	if !ok {
@@ -292,7 +290,22 @@ func (c *Client) InterruptQuery(telegramID string) bool {
 	}
 	cmd := v.(*exec.Cmd)
 	if cmd.Process != nil {
-		_ = cmd.Process.Kill()
+		// Try graceful termination first
+		_ = cmd.Process.Signal(syscall.SIGTERM)
+
+		// Wait up to 3 seconds for process to exit
+		done := make(chan struct{})
+		go func() {
+			_, _ = cmd.Process.Wait()
+			close(done)
+		}()
+		select {
+		case <-done:
+			// Process exited gracefully
+		case <-time.After(3 * time.Second):
+			// Force kill after timeout
+			_ = cmd.Process.Kill()
+		}
 	}
 	c.activeQueries.Delete(telegramID)
 	c.queryInfo.Delete(telegramID)
@@ -316,12 +329,18 @@ func (c *Client) GetActiveProcessCount() int {
 	return count
 }
 
-// GetActiveQueryInfo returns all active query activities.
+// GetActiveQueryInfo returns all active query activities with thread-safe tool snapshots.
 func (c *Client) GetActiveQueryInfo() []*QueryActivity {
 	var result []*QueryActivity
 	c.queryInfo.Range(func(_, v any) bool {
 		if qa, ok := v.(*QueryActivity); ok {
-			result = append(result, qa)
+			snapshot := &QueryActivity{
+				TelegramID: qa.TelegramID,
+				Model:      qa.Model,
+				StartTime:  qa.StartTime,
+				Tools:      qa.SnapshotTools(),
+			}
+			result = append(result, snapshot)
 		}
 		return true
 	})

@@ -11,6 +11,9 @@ import (
 	tele "gopkg.in/telebot.v4"
 )
 
+const maxPhotoSize = 10 * 1024 * 1024  // 10MB
+const maxDocSize = 20 * 1024 * 1024    // 20MB
+
 func (b *Bot) handleText(c tele.Context) error {
 	return b.sendToClaude(c, c.Text(), "full")
 }
@@ -27,9 +30,12 @@ func (b *Bot) handlePhoto(c tele.Context) error {
 	}
 	defer reader.Close()
 
-	data, err := io.ReadAll(reader)
+	data, err := io.ReadAll(io.LimitReader(reader, maxPhotoSize+1))
 	if err != nil {
 		return c.Send("Failed to read photo.")
+	}
+	if len(data) > maxPhotoSize {
+		return c.Send("Photo too large (max 10MB).")
 	}
 
 	b64 := base64.StdEncoding.EncodeToString(data)
@@ -51,7 +57,7 @@ func (b *Bot) handleDocument(c tele.Context) error {
 	if doc == nil {
 		return c.Send("No document found.")
 	}
-	if doc.FileSize > 20*1024*1024 {
+	if doc.FileSize > maxDocSize {
 		return c.Send("File too large (max 20MB).")
 	}
 
@@ -61,9 +67,12 @@ func (b *Bot) handleDocument(c tele.Context) error {
 	}
 	defer reader.Close()
 
-	data, err := io.ReadAll(reader)
+	data, err := io.ReadAll(io.LimitReader(reader, maxDocSize+1))
 	if err != nil {
 		return c.Send("Failed to read document.")
+	}
+	if len(data) > maxDocSize {
+		return c.Send("File too large (max 20MB).")
 	}
 
 	contentType := http.DetectContentType(data)

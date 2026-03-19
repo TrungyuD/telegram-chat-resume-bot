@@ -2,6 +2,7 @@ package dashboard
 
 import (
 	"context"
+	"crypto/subtle"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -85,7 +86,7 @@ func apiKeyAuth(apiKey string) func(http.Handler) http.Handler {
 				return
 			}
 			key := r.Header.Get("X-API-Key")
-			if key != apiKey {
+			if subtle.ConstantTimeCompare([]byte(key), []byte(apiKey)) != 1 {
 				http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
 				return
 			}

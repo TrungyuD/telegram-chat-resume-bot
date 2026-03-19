@@ -1,5 +1,7 @@
 package claude
 
+import "sync"
+
 // ImageInput for vision.
 type ImageInput struct {
 	Base64    string `json:"base64"`
@@ -42,12 +44,41 @@ type ToolActivity struct {
 	Time   string `json:"time"`
 }
 
-// QueryActivity tracks an active query.
+// QueryActivity tracks an active query with thread-safe Tools access.
 type QueryActivity struct {
 	TelegramID string         `json:"telegram_id"`
 	Model      string         `json:"model"`
 	StartTime  string         `json:"start_time"`
+	mu         sync.Mutex
 	Tools      []ToolActivity `json:"tools"`
+}
+
+// AddTool appends a tool activity in a thread-safe manner.
+func (qa *QueryActivity) AddTool(t ToolActivity) {
+	qa.mu.Lock()
+	qa.Tools = append(qa.Tools, t)
+	qa.mu.Unlock()
+}
+
+// MarkLastToolDone marks the last running tool as done.
+func (qa *QueryActivity) MarkLastToolDone() {
+	qa.mu.Lock()
+	for i := len(qa.Tools) - 1; i >= 0; i-- {
+		if qa.Tools[i].Status == "running" {
+			qa.Tools[i].Status = "done"
+			break
+		}
+	}
+	qa.mu.Unlock()
+}
+
+// SnapshotTools returns a copy of the tools slice for safe concurrent reading.
+func (qa *QueryActivity) SnapshotTools() []ToolActivity {
+	qa.mu.Lock()
+	cp := make([]ToolActivity, len(qa.Tools))
+	copy(cp, qa.Tools)
+	qa.mu.Unlock()
+	return cp
 }
 
 // CLIEvent represents a parsed event from Claude CLI stream-json output.
