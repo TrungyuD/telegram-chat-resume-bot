@@ -2,6 +2,7 @@ package bot
 
 import (
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/TrungyuD/telegram-chat-resume-bot/internal/events"
@@ -67,7 +68,9 @@ func (b *Bot) handleHelp(c tele.Context) error {
 
 func (b *Bot) handleClear(c tele.Context) error {
 	tid := telegramID(c)
-	_ = store.DeactivateSession(tid)
+	if err := store.DeactivateSession(tid); err != nil {
+		log.Printf("[bot] failed to deactivate session: %v", err)
+	}
 	return c.Send("Conversation cleared. New session will start on next message.")
 }
 

@@ -13,7 +13,7 @@ RUN CGO_ENABLED=0 go build -o /app/bot ./cmd/bot/
 # Stage 2 — Runtime with Node.js (required for Claude CLI)
 FROM node:22-alpine
 
-RUN npm install -g @anthropic-ai/claude-code && npm cache clean --force
+RUN npm install -g @anthropic-ai/claude-code@2.1.79 && npm cache clean --force
 
 RUN adduser -D -h /app appuser
 

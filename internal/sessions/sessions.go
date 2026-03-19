@@ -100,6 +100,10 @@ func ListSessions(telegramID string) ([]*storage.SessionMeta, error) {
 
 func SwitchSession(telegramID, sessionID string) error {
 	dir := filepath.Join(storage.DataDir, "sessions", telegramID)
+	// Lock the entire user session directory to prevent TOCTOU races
+	unlock := storage.LockFile(dir)
+	defer unlock()
+
 	names, err := storage.ListMDFiles(dir)
 	if err != nil {
 		return err
@@ -142,6 +146,10 @@ func SwitchSession(telegramID, sessionID string) error {
 
 func DeactivateSession(telegramID string) error {
 	dir := filepath.Join(storage.DataDir, "sessions", telegramID)
+	// Lock the entire user session directory to prevent TOCTOU races
+	unlock := storage.LockFile(dir)
+	defer unlock()
+
 	names, err := storage.ListMDFiles(dir)
 	if err != nil {
 		return err

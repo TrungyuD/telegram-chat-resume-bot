@@ -25,13 +25,16 @@ func (b *Bot) handleAdmin(c tele.Context) error {
 			return c.Send("Usage: /admin whitelist <telegram_id>")
 		}
 		if err := store.SetWhitelist(rest, true); err != nil {
+			// User doesn't exist yet, create them
 			user := &store.User{
 				TelegramID:    rest,
 				Role:          "user",
 				IsWhitelisted: true,
 				CreatedAt:     store.NowUTC(),
 			}
-			_ = store.CreateUser(user)
+			if err := store.CreateUser(user); err != nil {
+				return c.Send(fmt.Sprintf("Failed to whitelist user: %v", err))
+			}
 		}
 		return c.Send(fmt.Sprintf("User %s whitelisted.", rest))
 

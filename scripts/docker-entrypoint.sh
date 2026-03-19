@@ -9,4 +9,10 @@ if [ ! -w /app/data ]; then
   exit 1
 fi
 
+# Validate required environment variables
+if [ -z "$ANTHROPIC_API_KEY" ]; then
+  echo "ERROR: ANTHROPIC_API_KEY is not set. Claude CLI requires this to function."
+  exit 1
+fi
+
 exec /app/bot "$@"

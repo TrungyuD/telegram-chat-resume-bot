@@ -133,6 +133,33 @@ func handleGetConfig(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// mutableConfigKeys is the allowlist of keys that can be changed via the config API.
+// Sensitive keys (tokens, API keys, admin IDs) are excluded.
+var mutableConfigKeys = map[string]bool{
+	"CLAUDE_DEFAULT_MODEL":     true,
+	"claude_default_model":     true,
+	"CLAUDE_DEFAULT_EFFORT":    true,
+	"claude_default_effort":    true,
+	"CLAUDE_DEFAULT_THINKING":  true,
+	"claude_default_thinking":  true,
+	"MAX_CONCURRENT":           true,
+	"max_concurrent":           true,
+	"TIMEOUT_MS":               true,
+	"timeout_ms":               true,
+	"CONTEXT_MESSAGES":         true,
+	"context_messages":         true,
+	"RATE_LIMIT_PER_MINUTE":    true,
+	"rate_limit_per_minute":    true,
+	"COMPACT_THRESHOLD":        true,
+	"compact_threshold":        true,
+	"COMPACT_KEEP_RECENT":      true,
+	"compact_keep_recent":      true,
+	"COMPACT_ENABLED":          true,
+	"compact_enabled":          true,
+	"WEB_PORT":                 true,
+	"web_port":                 true,
+}
+
 func handleSetConfig(w http.ResponseWriter, r *http.Request) {
 	var body map[string]string
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -140,6 +167,10 @@ func handleSetConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	for k, v := range body {
+		if !mutableConfigKeys[k] {
+			http.Error(w, fmt.Sprintf(`{"error":"key %q is not allowed"}`, k), http.StatusForbidden)
+			return
+		}
 		if err := store.SetConfig(k, v); err != nil {
 			http.Error(w, fmt.Sprintf(`{"error":%q}`, err), http.StatusInternalServerError)
 			return

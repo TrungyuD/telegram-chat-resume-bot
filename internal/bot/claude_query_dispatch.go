@@ -46,7 +46,9 @@ func (b *Bot) sendToClaudeWithImages(c tele.Context, message string, images []cl
 			CreatedAt:  store.NowUTC(),
 			LastUsed:   store.NowUTC(),
 		}
-		_ = store.SaveSession(meta)
+		if err := store.SaveSession(meta); err != nil {
+			log.Printf("[bot] failed to save new session: %v", err)
+		}
 		session = meta
 		workingDir = meta.WorkingDir
 	}
@@ -58,7 +60,9 @@ func (b *Bot) sendToClaudeWithImages(c tele.Context, message string, images []cl
 	})
 
 	sessionPath := store.GetSessionPath(tid, session.SessionID)
-	_ = store.AppendSessionMessage(sessionPath, "user", message)
+	if err := store.AppendSessionMessage(sessionPath, "user", message); err != nil {
+		log.Printf("[bot] failed to save user message: %v", err)
+	}
 
 	placeholder, err := b.tele.Send(c.Chat(), "Processing...")
 	if err != nil {
@@ -122,25 +126,35 @@ func (b *Bot) sendToClaudeWithImages(c tele.Context, message string, images []cl
 
 	if result.SessionID != "" && result.SessionID != session.ClaudeSessionID {
 		session.ClaudeSessionID = result.SessionID
-		_ = store.SaveSession(session)
+		if err := store.SaveSession(session); err != nil {
+			log.Printf("[bot] failed to save claude session ID: %v", err)
+		}
 	}
 	if result.Content != "" {
-		_ = store.AppendSessionMessage(sessionPath, "assistant", result.Content)
+		if err := store.AppendSessionMessage(sessionPath, "assistant", result.Content); err != nil {
+			log.Printf("[bot] failed to save assistant message: %v", err)
+		}
 	}
 	if result.CostUSD > 0 {
-		_ = store.AddCostRecord(tid, &store.CostRecord{
+		if err := store.AddCostRecord(tid, &store.CostRecord{
 			SessionID:    session.SessionID,
 			CostUSD:      result.CostUSD,
 			InputTokens:  result.InputTokens,
 			OutputTokens: result.OutputTokens,
 			Model:        settings.Model,
 			CreatedAt:    store.NowUTC(),
-		})
+		}); err != nil {
+			log.Printf("[bot] failed to save cost record: %v", err)
+		}
 	}
 
-	_ = store.UpdateSessionLastUsed(tid, session.SessionID)
+	if err := store.UpdateSessionLastUsed(tid, session.SessionID); err != nil {
+		log.Printf("[bot] failed to update session last used: %v", err)
+	}
 	go func() {
-		_ = chat.CompactSessionIfNeeded(b.config, tid, session.SessionID)
+		if err := chat.CompactSessionIfNeeded(b.config, tid, session.SessionID); err != nil {
+			log.Printf("[bot] session compaction failed: %v", err)
+		}
 	}()
 
 	finalText := result.Content

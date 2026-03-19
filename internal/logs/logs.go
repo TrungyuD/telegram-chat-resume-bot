@@ -26,6 +26,8 @@ func todayDate() string {
 	return time.Now().UTC().Format("2006-01-02")
 }
 
+const maxEntriesPerDay = 1000
+
 func AddLog(logType, level, message string, metadata map[string]any) error {
 	date := todayDate()
 	path := logPath(date)
@@ -45,6 +47,12 @@ func AddLog(logType, level, message string, metadata map[string]any) error {
 		_ = json.Unmarshal(data, &entries)
 	}
 	entries = append(entries, entry)
+
+	// Keep only most recent entries to prevent unbounded growth
+	if len(entries) > maxEntriesPerDay {
+		entries = entries[len(entries)-maxEntriesPerDay:]
+	}
+
 	return storage.WriteJSON(path, entries)
 }
 
